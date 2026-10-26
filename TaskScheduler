@@ -1,0 +1,62 @@
+import java.util.*;
+class Task{
+  String name,id;
+  long executionTime;
+  Task(String name,String id,long executionTime){
+    this.name=name;
+    this.id=id;
+    this.executionTime=executionTime;
+  }
+}
+class TaskScheduler{
+
+  private PriorityQueue<Task> pq;
+  TaskScheduler(){
+    pq=new PriorityQueue<>(
+      (a,b) -> Long.compare(a.executionTime,b.executionTime)
+    );
+
+    Thread worker = new Thread(()->{ /***
+    while(true){
+      execute();
+      try{
+        Thread.sleep(100);
+      }
+      catch(InterruptedException e){
+        Thread.currentThread().interrupt();
+        break;
+      }
+    }
+  });
+  worker.start(); /***
+
+  }
+
+
+  public synchronized void schedule(Task t){ //SYNCHRONIZED FOR THREADS
+    pq.offer(t);
+  }
+  public synchronized void execute(){ //SYNCHRONIZED FOR THREADS
+    long currTime=System.currentTimeMillis();
+    while(!pq.isEmpty() && pq.peek().executionTime<=currTime){
+      Task t=pq.poll();
+      executing(t);
+    }
+  }
+  public void executing(Task t){
+    System.out.println("Executing task: "+t.name+", "+t.id);
+  }
+}
+class Solution {
+  public static void main(String args[]){
+    TaskScheduler ts=new TaskScheduler();
+    long now=System.currentTimeMillis();
+    Task t1=new Task("A","1",now);
+    Task t2=new Task("B","1",now);
+    Task t3=new Task("A","2",now+10000);
+    ts.schedule(t1);
+    ts.schedule(t2);
+    ts.schedule(t3);
+    ts.execute();
+  }
+}
