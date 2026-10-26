@@ -1,0 +1,115 @@
+import java.util.*;
+class Entry{
+  String value;
+  long ttl;
+  Entry(String value,long ttl){
+    this.value=value;
+    this.ttl=System.currentTimeMillis()+ttl;
+  }
+  boolean isExpired(){
+    return System.currentTimeMillis()>=ttl;
+  }
+}
+
+interface Storage{
+  void put(String key,Entry e);
+  Entry get(String key);
+  void remove(String key);
+}
+class BackingStorage implements Storage{
+  HashMap<String,Entry> map=new HashMap<>();
+  public void put(String key,Entry e){
+    map.put(key,e);
+    return;
+  }
+  public Entry get(String key){
+    Entry e=map.get(key);
+    if(e==null) return null;
+    if(e.isExpired()){
+      map.remove(key);
+      return null;
+    }
+    return e;
+  }
+  public void remove(String key){
+      if(map.containsKey(key))
+      map.remove(key);
+    } 
+}
+
+class LRUStorage implements Storage{
+  private int capacity;
+  LinkedHashMap<String,Entry> map;
+  LRUStorage(int capacity){
+    this.capacity=capacity;
+    map=new LinkedHashMap<>();
+  }
+  public void put(String key,Entry e){
+    map.put(key,e);
+    if(map.size()>capacity){
+      String lruKey=map.keySet().iterator().next();
+      map.remove(lruKey);
+    }
+  }
+  public Entry get(String key){
+    Entry e=map.get(key);
+    if(e==null) return null;
+    if(e.isExpired()){
+      map.remove(key);
+      return null;
+    }
+    return e;
+  }
+  public void remove(String key){
+    map.remove(key);
+  }
+}
+
+class TwoTierStorage{
+  private Storage l1,l2;
+  TwoTierStorage(Storage l1,Storage l2){
+    this.l1=l1;
+    this.l2=l2;
+  }
+
+  public void put(String key,String value,long ttl){
+    Entry e=new Entry(value,ttl);
+    l2.put(key,e);
+    l1.put(key,e);
+  }
+
+  public String get(String key){
+    Entry e=l1.get(key);
+    if(e!=null){
+      System.out.println("Cache HIT L1: "+key);
+      return e.value;
+    }
+    System.out.println("L1 MISS");
+    e=l2.get(key);
+    if(e!=null){
+      System.out.println("L2 HIT: "+key);
+      l1.put(key,e);
+      return e.value;
+    }
+    System.out.println("L2 MISS");
+    return null;
+  }
+
+  public void remove(String key){
+    l1.remove(key);
+    l2.remove(key);
+  }
+
+}
+class Solution {
+  public static void main(String args[]){
+    Storage l2=new BackingStorage();
+    Storage l1=new LRUStorage(2);
+    TwoTierStorage s=new TwoTierStorage(l1, l2);
+    s.put("A","apple",100000);
+    s.put("B","banana",100000);
+    s.put("C","cherry",100000);
+    System.out.println(s.get("A"));
+   
+  }
+}
